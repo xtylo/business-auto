@@ -1,7 +1,7 @@
 // Activities for the invoice approval process.
 //
 // They are simulated: no real payment system or mail server is called yet.
-// What is real is how they fail, because that is what session 2 is about.
+// What is real is how they fail, because that is what the workflow has to cope with.
 
 const { ApplicationFailure, Context, log } = require('@temporalio/activity');
 
@@ -61,6 +61,42 @@ async function recordPayment(invoice, simulate = {}) {
 }
 
 /**
+ * Asks a person to approve the invoice (simulated: it only writes a log line).
+ * In a real system this would send an e-mail or create a task in an approval inbox.
+ *
+ * @param {object} invoice
+ * @param {'manager'|'director'} level - Who is being asked.
+ */
+async function requestApproval(invoice, level) {
+  log.info('Approval requested', { invoiceId: invoice.id, level, amount: invoice.amount });
+  return { requestedFrom: level };
+}
+
+/**
+ * Books the payment in the (simulated) accounting ledger.
+ *
+ * @param {object} invoice
+ * @param {{paymentId: string}} payment
+ * @param {{postToLedgerFailures?: number}} [simulate] - Fail this many attempts before succeeding.
+ */
+async function postToLedger(invoice, payment, simulate = {}) {
+  failIfSimulated('postToLedger', simulate.postToLedgerFailures);
+
+  log.info('Payment posted to ledger', { invoiceId: invoice.id, paymentId: payment.paymentId });
+  return { posted: true };
+}
+
+/**
+ * Compensation for recordPayment: undoes a payment that was already recorded.
+ * Like every activity it may run more than once, so reverting an already
+ * reverted payment must be harmless.
+ */
+async function revertPayment(invoice, payment) {
+  log.warn('Payment reverted', { invoiceId: invoice.id, paymentId: payment.paymentId });
+  return { reverted: true, paymentId: payment.paymentId };
+}
+
+/**
  * Sends a (simulated) notification.
  *
  * @param {object} invoice
@@ -89,4 +125,11 @@ function failIfSimulated(activityName, failures = 0) {
   }
 }
 
-module.exports = { validateInvoice, recordPayment, notify };
+module.exports = {
+  validateInvoice,
+  requestApproval,
+  recordPayment,
+  postToLedger,
+  revertPayment,
+  notify,
+};

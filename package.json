@@ -13,6 +13,7 @@
     "worker": "node src/worker.js",
     "start:hello": "node src/scripts/start-hello.js",
     "start:invoice": "node src/scripts/start-invoice.js",
+    "invoice": "node src/scripts/invoice.js",
     "api": "node src/api/server.js"
   },
   "dependencies": {

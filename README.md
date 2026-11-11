@@ -3,7 +3,7 @@
 A platform that automates business processes using durable workflows.
 Built with JavaScript (Node.js), Temporal, Redis and AWS CDK.
 
-> **Status:** work in progress. Session 2 of 8 complete. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status:** work in progress. Session 3 of 8 in progress. See [PLAN.md](PLAN.md) for the roadmap.
 > The "Project brief" section below is the original set of requirements. Its target figures
 > are goals, not measured results; the final README will report what was actually measured.
 
@@ -18,7 +18,7 @@ Requirements: Docker Desktop, VS Code with the Dev Containers extension.
 
 ```bash
 npm run worker           # terminal 1: start a worker
-npm run start:invoice    # terminal 2: start an invoice approval workflow
+npm run start:invoice    # terminal 2: start an invoice approval workflow, then follow the printed commands
 ```
 
 ### Option B: directly on the host
@@ -37,7 +37,8 @@ Temporal Web UI in both cases: http://localhost:8233
 | Script | What it does |
 | --- | --- |
 | `npm run worker` | Starts a Temporal worker |
-| `npm run start:invoice -- <scenario>` | Starts `invoiceApproval`. Scenarios: `happy`, `flaky`, `exhausted`, `invalid` |
+| `npm run start:invoice -- <scenario> [timeoutSeconds]` | Starts `invoiceApproval`. Scenarios: `happy`, `flaky`, `exhausted`, `compensate`, `invalid` |
+| `npm run invoice -- <status\|approve\|reject\|result> <workflowId>` | Queries or signals a running invoice workflow |
 | `npm run start:hello -- <name> <pauseSeconds>` | Starts the `helloProcess` workflow |
 | `npm run api` | Starts the HTTP API (placeholder until session 4) |
 | `npm run infra:up` / `infra:down` / `infra:logs` | Host only: manage Temporal and Redis with Docker Compose. History is in memory and is erased on stop |

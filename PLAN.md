@@ -8,8 +8,8 @@ Convention: all code, comments, Markdown and commit messages are written in Engl
 ## Progress
 
 - [x] Session 1 — Temporal: first workflow running *(done; notes in [docs/session-01.md](docs/session-01.md))*
-- [ ] Session 2 — The real process: invoices with retries *(files in place; run the steps in [docs/session-02.md](docs/session-02.md))*
-- [ ] Session 3 — Human wait: signals, queries, timers and compensation
+- [x] Session 2 — The real process: invoices with retries *(done; notes in [docs/session-02.md](docs/session-02.md))*
+- [ ] Session 3 — Human wait: signals, queries, timers and compensation *(files in place; run the steps in [docs/session-03.md](docs/session-03.md))*
 - [ ] Session 4 — Express API + Redis
 - [ ] Session 5 — Testing
 - [ ] Session 6 — AWS CDK: infrastructure as code
@@ -26,7 +26,7 @@ Every session ends with something that runs. Anything that does not fit in the h
 
 ## Business process to automate (proposal)
 
-**Supplier invoice approval**: receive invoice → validate → request human approval (with expiry and escalation) → record payment → notify. If a step fails after payment, the payment is compensated.
+**Supplier invoice approval**: receive invoice → validate → request human approval (with expiry and escalation) → record payment → post to ledger → notify. If the ledger step fails after payment, the payment is reverted.
 
 It was chosen because it exercises what makes Temporal valuable: retries, long waits, human intervention and compensation. It can be swapped for another process without changing the plan.
 
@@ -108,8 +108,8 @@ business-auto/
 1. `approve` / `reject` signals; the workflow waits with `condition()`.
 2. Timer: no answer within N time escalates; no answer again rejects.
 3. `status` query to see which step the process is on.
-4. Compensation: if `notify` fails permanently after `recordPayment`, run `revertPayment`.
-5. Exercise all three paths from the Temporal CLI.
+4. Compensation: if `postToLedger` fails permanently after `recordPayment`, run `revertPayment`. `notify` is best effort.
+5. Exercise every path with the `npm run invoice` commands (or the Temporal CLI).
 
 **Done when:** you can approve, reject and let an invoice expire, and all three paths look right in the UI.
 
