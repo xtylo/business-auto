@@ -7,8 +7,8 @@ Convention: all code, comments, Markdown and commit messages are written in Engl
 
 ## Progress
 
-- [x] Session 1 — Temporal: first workflow running *(files in place; run the steps in [docs/session-01.md](docs/session-01.md))*
-- [ ] Session 2 — The real process: invoices with retries
+- [x] Session 1 — Temporal: first workflow running *(done; notes in [docs/session-01.md](docs/session-01.md))*
+- [ ] Session 2 — The real process: invoices with retries *(files in place; run the steps in [docs/session-02.md](docs/session-02.md))*
 - [ ] Session 3 — Human wait: signals, queries, timers and compensation
 - [ ] Session 4 — Express API + Redis
 - [ ] Session 5 — Testing
@@ -39,13 +39,14 @@ It was chosen because it exercises what makes Temporal valuable: retries, long w
 | `docker-compose.yml` with LocalStack `SERVICES=elb,redis` | LocalStack now requires an account and auth token; "redis" is not a LocalStack service; Temporal is missing | Compose with real Temporal + Redis *(done)*. CDK is validated with `cdk synth` and template tests |
 | `cdk-stack.js` with `@aws-cdk/core` | That is CDK v1, unsupported since 2023; `vpc` is undefined | CDK v2 (`aws-cdk-lib`) in `infra/` (session 6) |
 | `index.js` does not export `app` | The README integration test cannot import it | `app.js` exports, `server.js` listens *(done)* |
-| `.devcontainer` references a missing `Dockerfile` | It does not start | Dockerfile created in session 6 (reused for ECS) |
+| `.devcontainer` references a missing `Dockerfile` | It does not start | Compose-based dev container with its own Dockerfile *(done, session 2)*. The production image is a separate Dockerfile (session 6) |
 | k6: 1000 VUs with `sleep(1)` | Tops out near 1000 req/s, not the 2000 target; thresholds differ from the README | Arrival-rate scenario and aligned thresholds (session 7) |
 
 ## Target repository layout
 
 ```
 business-auto/
+├── .devcontainer/        # development container (Node 22 + Temporal CLI)
 ├── src/
 │   ├── workflows/        # deterministic code (runs in the sandbox)
 │   ├── activities/       # side effects: HTTP, database, e-mail
@@ -67,8 +68,8 @@ business-auto/
 ## Prerequisites
 
 - Docker Desktop running on Windows.
-- Node.js 22 LTS and Git.
-- Optional: Temporal CLI (`temporal server start-dev`) as an alternative to Docker.
+- VS Code with the Dev Containers extension (development happens inside the container from session 2 on).
+- Git.
 
 ---
 
@@ -90,8 +91,9 @@ business-auto/
 **Concept:** activity timeouts (`startToCloseTimeout`), retry policy, non-retryable errors, activity idempotency.
 
 **Steps**
-1. Diagram of the approval flow (5 min; covers Phase 1 of the README).
-2. Activities: `validateInvoice`, `recordPayment`, `notify` (simulated, with configurable random failures).
+0. Move development into the dev container.
+1. Diagram of the approval flow (covers Phase 1 of the README).
+2. Activities: `validateInvoice`, `recordPayment`, `notify` (simulated, with repeatable failures driven by the attempt number).
 3. `invoiceApproval` workflow chaining them, without human approval yet.
 4. Trigger failures and watch the retries in the UI.
 5. Mark "invalid invoice" as a non-retryable error.

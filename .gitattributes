@@ -1,0 +1,2 @@
+# Keep LF line endings everywhere so Windows and the Linux dev container agree.
+* text=auto eol=lf

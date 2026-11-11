@@ -4,8 +4,8 @@
 
 | Piece | What it is | Where it lives here | Closest .NET / Azure idea |
 | --- | --- | --- | --- |
-| **Workflow** | The orchestration logic: which steps run, in what order, what happens on failure | `src/workflows/index.js` | Durable Functions orchestrator |
-| **Activity** | One step with side effects: an HTTP call, a database write, an e-mail | `src/activities/index.js` | Durable Functions activity |
+| **Workflow** | The orchestration logic: which steps run, in what order, what happens on failure | `src/workflows/hello-process.js` | Durable Functions orchestrator |
+| **Activity** | One step with side effects: an HTTP call, a database write, an e-mail | `src/activities/hello.js` | Durable Functions activity |
 | **Worker** | A process of yours that polls the server for tasks and runs workflow and activity code | `src/worker.js` | The Functions host |
 | **Task queue** | A named queue on the server. Starters put work in, workers take work out | `business-processes` in `src/config.js` | A queue name, but managed for you |
 

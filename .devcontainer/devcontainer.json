@@ -1,0 +1,17 @@
+{
+  "name": "business-auto",
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.devcontainer.yml"],
+  "service": "app",
+  "workspaceFolder": "/workspaces/business-auto",
+  "remoteUser": "node",
+  "postCreateCommand": "sudo chown node:node node_modules && npm install",
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "API" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint"]
+    }
+  }
+}

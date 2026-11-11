@@ -1,0 +1,25 @@
+# Adds the development container to the services defined in ../docker-compose.yml.
+# Relative paths in this file are resolved from the repository root, because that is
+# where the first compose file listed in devcontainer.json lives.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    # Keep the container alive; VS Code attaches to it.
+    command: sleep infinity
+    volumes:
+      - .:/workspaces/business-auto:cached
+      # node_modules lives in a Docker volume instead of the Windows file system:
+      # much faster installs, and Linux and Windows dependencies never mix.
+      - node_modules:/workspaces/business-auto/node_modules
+    environment:
+      # Inside the Docker network, services are reached by service name, not localhost.
+      TEMPORAL_ADDRESS: temporal:7233
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - temporal
+      - redis
+
+volumes:
+  node_modules:

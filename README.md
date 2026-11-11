@@ -3,31 +3,44 @@
 A platform that automates business processes using durable workflows.
 Built with JavaScript (Node.js), Temporal, Redis and AWS CDK.
 
-> **Status:** work in progress. Session 1 of 8 complete. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status:** work in progress. Session 2 of 8 complete. See [PLAN.md](PLAN.md) for the roadmap.
 > The "Project brief" section below is the original set of requirements. Its target figures
 > are goals, not measured results; the final README will report what was actually measured.
 
 ## Getting started
 
-Requirements: Node.js 20 or later (22 LTS recommended), Docker Desktop, Git.
+### Option A: dev container (recommended)
+
+Requirements: Docker Desktop, VS Code with the Dev Containers extension.
+
+1. Open the folder in VS Code and run **Dev Containers: Reopen in Container**.
+2. Temporal and Redis start automatically, and `npm install` runs inside the container.
 
 ```bash
-npm install            # install dependencies
-npm run infra:up       # start Temporal and Redis in Docker
-npm run worker         # terminal 1: start a worker
-npm run start:hello    # terminal 2: start a workflow
+npm run worker           # terminal 1: start a worker
+npm run start:invoice    # terminal 2: start an invoice approval workflow
 ```
 
-Temporal Web UI: http://localhost:8233
+### Option B: directly on the host
+
+Requirements: Node.js 20 or later (22 LTS recommended), Docker Desktop.
+
+```bash
+npm install
+npm run infra:up         # start Temporal and Redis in Docker
+npm run worker           # terminal 1
+npm run start:invoice    # terminal 2
+```
+
+Temporal Web UI in both cases: http://localhost:8233
 
 | Script | What it does |
 | --- | --- |
-| `npm run infra:up` | Starts Temporal (dev server) and Redis with Docker Compose |
-| `npm run infra:down` | Stops them. Workflow history is in memory and is erased |
-| `npm run infra:logs` | Follows the container logs |
 | `npm run worker` | Starts a Temporal worker |
+| `npm run start:invoice -- <scenario>` | Starts `invoiceApproval`. Scenarios: `happy`, `flaky`, `exhausted`, `invalid` |
 | `npm run start:hello -- <name> <pauseSeconds>` | Starts the `helloProcess` workflow |
 | `npm run api` | Starts the HTTP API (placeholder until session 4) |
+| `npm run infra:up` / `infra:down` / `infra:logs` | Host only: manage Temporal and Redis with Docker Compose. History is in memory and is erased on stop |
 
 ## Repository layout
 
@@ -41,6 +54,7 @@ src/
   client.js      Temporal client factory
   config.js      Configuration from environment variables
 docs/            Session notes
+.devcontainer/   Development container definition
 loadtest/        k6 load test
 ```
 
