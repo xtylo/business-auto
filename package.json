@@ -1,0 +1,24 @@
+{
+  "name": "business-auto",
+  "version": "0.1.0",
+  "description": "Business process automation platform built with Node.js, Temporal, Redis and AWS CDK",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs -f",
+    "worker": "node src/worker.js",
+    "start:hello": "node src/scripts/start-hello.js",
+    "api": "node src/api/server.js"
+  },
+  "dependencies": {
+    "@temporalio/activity": "^1.25.0",
+    "@temporalio/client": "^1.25.0",
+    "@temporalio/worker": "^1.25.0",
+    "@temporalio/workflow": "^1.25.0",
+    "express": "^5.3.0"
+  }
+}

@@ -1,0 +1,18 @@
+# Local infrastructure for development.
+#   Temporal gRPC  -> localhost:7233  (workers and clients connect here)
+#   Temporal Web UI -> http://localhost:8233
+#   Redis          -> localhost:6379  (used from session 4 onwards)
+services:
+  temporal:
+    image: temporalio/temporal:latest
+    # Single-binary development server. State is kept in memory:
+    # `docker compose down` erases all workflow history.
+    command: ["server", "start-dev", "--ip", "0.0.0.0"]
+    ports:
+      - "7233:7233"
+      - "8233:8233"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
