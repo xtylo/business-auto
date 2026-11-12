@@ -9,8 +9,8 @@ Convention: all code, comments, Markdown and commit messages are written in Engl
 
 - [x] Session 1 — Temporal: first workflow running *(done; notes in [docs/session-01.md](docs/session-01.md))*
 - [x] Session 2 — The real process: invoices with retries *(done; notes in [docs/session-02.md](docs/session-02.md))*
-- [ ] Session 3 — Human wait: signals, queries, timers and compensation *(files in place; run the steps in [docs/session-03.md](docs/session-03.md))*
-- [ ] Session 4 — Express API + Redis
+- [x] Session 3 — Human wait: signals, queries, timers and compensation *(done; notes in [docs/session-03.md](docs/session-03.md))*
+- [ ] Session 4 — Express API + Redis *(files in place; run the steps in [docs/session-04.md](docs/session-04.md))*
 - [ ] Session 5 — Testing
 - [ ] Session 6 — AWS CDK: infrastructure as code
 - [ ] Session 7 — Observability and load testing
@@ -50,12 +50,12 @@ business-auto/
 ├── src/
 │   ├── workflows/        # deterministic code (runs in the sandbox)
 │   ├── activities/       # side effects: HTTP, database, e-mail
-│   ├── api/              # app.js, routes.js, server.js
+│   ├── api/              # app.js, routes.js, store.js, server.js
 │   ├── scripts/          # command-line starters
 │   ├── worker.js
 │   ├── client.js         # Temporal connection
 │   ├── config.js
-│   └── redis.js          # session 4
+│   └── redis.js          # Redis connection
 ├── test/                 # unit and integration (session 5)
 ├── infra/                # CDK v2 app (session 6)
 ├── docs/                 # session notes
@@ -122,7 +122,8 @@ business-auto/
 2. `POST /api/start-process` (starts the workflow, returns 202 with the id).
 3. `GET /api/process/:id` (uses the query) and `POST /api/process/:id/approve|reject` (sends a signal).
 4. Redis: `Idempotency-Key` to avoid duplicate starts, and a short-lived status cache.
-5. Input validation and error handling (404 when the workflow does not exist).
+5. Input validation and error handling (404 unknown process, 409 duplicate invoice or already finished).
+6. Fail-open behaviour: the API keeps working when Redis is down.
 
 **Done when:** the whole flow can be driven with `curl` alone, and repeating the same POST does not create a second process.
 

@@ -3,7 +3,7 @@
 A platform that automates business processes using durable workflows.
 Built with JavaScript (Node.js), Temporal, Redis and AWS CDK.
 
-> **Status:** work in progress. Session 3 of 8 in progress. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status:** work in progress. Session 4 of 8 in progress. See [PLAN.md](PLAN.md) for the roadmap.
 > The "Project brief" section below is the original set of requirements. Its target figures
 > are goals, not measured results; the final README will report what was actually measured.
 
@@ -40,7 +40,7 @@ Temporal Web UI in both cases: http://localhost:8233
 | `npm run start:invoice -- <scenario> [timeoutSeconds]` | Starts `invoiceApproval`. Scenarios: `happy`, `flaky`, `exhausted`, `compensate`, `invalid` |
 | `npm run invoice -- <status\|approve\|reject\|result> <workflowId>` | Queries or signals a running invoice workflow |
 | `npm run start:hello -- <name> <pauseSeconds>` | Starts the `helloProcess` workflow |
-| `npm run api` | Starts the HTTP API (placeholder until session 4) |
+| `npm run api` | Starts the HTTP API on port 3000. Endpoints and examples: [docs/session-04.md](docs/session-04.md) |
 | `npm run infra:up` / `infra:down` / `infra:logs` | Host only: manage Temporal and Redis with Docker Compose. History is in memory and is erased on stop |
 
 ## Repository layout
@@ -49,10 +49,11 @@ Temporal Web UI in both cases: http://localhost:8233
 src/
   workflows/     Orchestration logic. Deterministic, runs in Temporal's sandbox
   activities/    Steps with side effects (HTTP, database, e-mail)
-  api/           Express application (app.js, routes.js, server.js)
+  api/           Express application (app.js, routes.js, store.js, server.js)
   scripts/       Small command-line starters
   worker.js      Process that executes workflows and activities
   client.js      Temporal client factory
+  redis.js       Redis connection factory
   config.js      Configuration from environment variables
 docs/            Session notes
 .devcontainer/   Development container definition
