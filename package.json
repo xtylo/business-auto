@@ -11,10 +11,13 @@
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
     "worker": "node src/worker.js",
+    "api": "node src/api/server.js",
     "start:hello": "node src/scripts/start-hello.js",
     "start:invoice": "node src/scripts/start-invoice.js",
     "invoice": "node src/scripts/invoice.js",
-    "api": "node src/api/server.js"
+    "test": "jest",
+    "test:unit": "jest test/activities test/api",
+    "test:workflows": "jest test/workflows"
   },
   "dependencies": {
     "@temporalio/activity": "^1.25.0",
@@ -23,5 +26,20 @@
     "@temporalio/workflow": "^1.25.0",
     "express": "^5.3.0",
     "ioredis": "^6.0.0"
+  },
+  "devDependencies": {
+    "@temporalio/testing": "^1.25.0",
+    "jest": "^30.5.2",
+    "supertest": "^7.3.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/test/**/*.test.js"
+    ],
+    "testTimeout": 60000,
+    "setupFiles": [
+      "<rootDir>/test/helpers/quiet-logs.js"
+    ]
   }
 }

@@ -10,8 +10,8 @@ Convention: all code, comments, Markdown and commit messages are written in Engl
 - [x] Session 1 — Temporal: first workflow running *(done; notes in [docs/session-01.md](docs/session-01.md))*
 - [x] Session 2 — The real process: invoices with retries *(done; notes in [docs/session-02.md](docs/session-02.md))*
 - [x] Session 3 — Human wait: signals, queries, timers and compensation *(done; notes in [docs/session-03.md](docs/session-03.md))*
-- [ ] Session 4 — Express API + Redis *(files in place; run the steps in [docs/session-04.md](docs/session-04.md))*
-- [ ] Session 5 — Testing
+- [x] Session 4 — Express API + Redis *(done; notes in [docs/session-04.md](docs/session-04.md))*
+- [ ] Session 5 — Testing *(files in place; run the steps in [docs/session-05.md](docs/session-05.md))*
 - [ ] Session 6 — AWS CDK: infrastructure as code
 - [ ] Session 7 — Observability and load testing
 - [ ] Session 8 — Deployment and wrap-up
@@ -56,7 +56,8 @@ business-auto/
 │   ├── client.js         # Temporal connection
 │   ├── config.js
 │   └── redis.js          # Redis connection
-├── test/                 # unit and integration (session 5)
+├── test/                 # activities, API and workflow tests
+├── .github/workflows/    # CI
 ├── infra/                # CDK v2 app (session 6)
 ├── docs/                 # session notes
 ├── loadtest/k6.js
@@ -135,7 +136,8 @@ business-auto/
 1. Jest set up; unit tests for activities.
 2. Workflow tests with mocked activities: happy path, rejection, expiry, compensation.
 3. API tests with supertest and a mocked Temporal client.
-4. `npm test` script and, time permitting, GitHub Actions.
+4. `npm test` script and a GitHub Actions workflow.
+5. Break the workflow on purpose and watch the tests catch it; write one test yourself.
 
 **Done when:** `npm test` passes and covers the four workflow paths.
 
