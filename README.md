@@ -3,7 +3,7 @@
 A platform that automates business processes using durable workflows.
 Built with JavaScript (Node.js), Temporal, Redis and AWS CDK.
 
-> **Status:** work in progress. Session 5 of 8 complete. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status:** work in progress. Session 6 of 8 in progress. See [PLAN.md](PLAN.md) for the roadmap.
 > The "Project brief" section below is the original set of requirements. Its target figures
 > are goals, not measured results; the final README will report what was actually measured.
 
@@ -41,6 +41,8 @@ Temporal Web UI in both cases: http://localhost:8233
 | `npm run invoice -- <status\|approve\|reject\|result> <workflowId>` | Queries or signals a running invoice workflow |
 | `npm run start:hello -- <name> <pauseSeconds>` | Starts the `helloProcess` workflow |
 | `npm test` | Runs all tests. `npm run test:unit` skips the workflow tests, which need to download a test server once |
+| `npm run cdk:synth` / `cdk:test` / `cdk:diff` | AWS infrastructure in `infra/`: generate the CloudFormation template, run the template tests, compare with what is deployed |
+| `npm run docker:build` | Host only: builds the production image |
 | `npm run api` | Starts the HTTP API on port 3000. Endpoints and examples: [docs/session-04.md](docs/session-04.md) |
 | `npm run infra:up` / `infra:down` / `infra:logs` | Host only: manage Temporal and Redis with Docker Compose. History is in memory and is erased on stop |
 
@@ -59,6 +61,8 @@ src/
 test/            Activity, API and workflow tests
 docs/            Session notes
 .devcontainer/   Development container definition
+infra/           AWS infrastructure (CDK v2): network, ECS services, load balancer, Redis
+Dockerfile       Production image, shared by the API and the worker
 loadtest/        k6 load test
 ```
 

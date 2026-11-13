@@ -1,0 +1,15 @@
+# Keeps the build context small. CDK also uses this file to decide which files
+# count when it fingerprints the image, so changes to docs or tests do not
+# trigger a new deployment.
+node_modules
+.git
+.github
+.devcontainer
+infra
+test
+docs
+loadtest
+coverage
+*.md
+.env
+.env.*

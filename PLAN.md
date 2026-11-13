@@ -11,8 +11,8 @@ Convention: all code, comments, Markdown and commit messages are written in Engl
 - [x] Session 2 — The real process: invoices with retries *(done; notes in [docs/session-02.md](docs/session-02.md))*
 - [x] Session 3 — Human wait: signals, queries, timers and compensation *(done; notes in [docs/session-03.md](docs/session-03.md))*
 - [x] Session 4 — Express API + Redis *(done; notes in [docs/session-04.md](docs/session-04.md))*
-- [ ] Session 5 — Testing *(files in place; run the steps in [docs/session-05.md](docs/session-05.md))*
-- [ ] Session 6 — AWS CDK: infrastructure as code
+- [x] Session 5 — Testing *(done; notes in [docs/session-05.md](docs/session-05.md))*
+- [ ] Session 6 — AWS CDK: infrastructure as code *(files in place; run the steps in [docs/session-06.md](docs/session-06.md))*
 - [ ] Session 7 — Observability and load testing
 - [ ] Session 8 — Deployment and wrap-up
 
@@ -37,7 +37,7 @@ It was chosen because it exercises what makes Temporal valuable: retries, long w
 | `src/src/*.js` | Duplicated folder; the README tests point to `src/` | Flattened to `src/` *(done)* |
 | `workflows.js` creates a `WorkflowClient` | Mixes client and workflow; no worker, no Temporal server | Split into `workflows/`, `activities/`, `worker.js`, `client.js` *(done)* |
 | `docker-compose.yml` with LocalStack `SERVICES=elb,redis` | LocalStack now requires an account and auth token; "redis" is not a LocalStack service; Temporal is missing | Compose with real Temporal + Redis *(done)*. CDK is validated with `cdk synth` and template tests |
-| `cdk-stack.js` with `@aws-cdk/core` | That is CDK v1, unsupported since 2023; `vpc` is undefined | CDK v2 (`aws-cdk-lib`) in `infra/` (session 6) |
+| `cdk-stack.js` with `@aws-cdk/core` | That is CDK v1, unsupported since 2023; `vpc` is undefined | CDK v2 (`aws-cdk-lib`) in `infra/` *(done, session 6)* |
 | `index.js` does not export `app` | The README integration test cannot import it | `app.js` exports, `server.js` listens *(done)* |
 | `.devcontainer` references a missing `Dockerfile` | It does not start | Compose-based dev container with its own Dockerfile *(done, session 2)*. The production image is a separate Dockerfile (session 6) |
 | k6: 1000 VUs with `sleep(1)` | Tops out near 1000 req/s, not the 2000 target; thresholds differ from the README | Arrival-rate scenario and aligned thresholds (session 7) |
@@ -58,11 +58,11 @@ business-auto/
 │   └── redis.js          # Redis connection
 ├── test/                 # activities, API and workflow tests
 ├── .github/workflows/    # CI
-├── infra/                # CDK v2 app (session 6)
+├── infra/                # CDK v2 app: bin/, lib/, test/
 ├── docs/                 # session notes
 ├── loadtest/k6.js
 ├── docker-compose.yml
-├── Dockerfile            # session 6
+├── Dockerfile            # production image (API and worker)
 └── README.md
 ```
 
@@ -147,12 +147,12 @@ business-auto/
 
 **Steps**
 1. `Dockerfile` for API and worker (same image, different command).
-2. `cdk init` in `infra/` with CDK v2.
-3. Stack: VPC, ECS Fargate cluster, API service behind an ALB, worker service, ElastiCache Redis.
+2. CDK v2 app in `infra/` (JavaScript, its own `package.json`).
+3. Stack: VPC, ECS Fargate cluster, API service behind an ALB, worker service, Temporal dev server, ElastiCache Redis.
 4. `cdk synth` and read the generated template.
 5. Template tests with `aws-cdk-lib/assertions`.
 
-**Decision for this session:** where Temporal runs on AWS — Temporal Cloud (simpler) or a self-hosted server on ECS (more parts, more cost).
+**Decision taken:** Temporal runs inside the AWS account as a single dev-server task on ECS. This is a demo setup with in-memory state; production would use Temporal Cloud or a database-backed cluster.
 
 **Done when:** `cdk synth` produces the template without errors and the infrastructure tests pass. No AWS spend yet.
 

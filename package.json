@@ -17,7 +17,11 @@
     "invoice": "node src/scripts/invoice.js",
     "test": "jest",
     "test:unit": "jest test/activities test/api",
-    "test:workflows": "jest test/workflows"
+    "test:workflows": "jest test/workflows",
+    "cdk:synth": "npm --prefix infra run synth",
+    "cdk:diff": "npm --prefix infra run diff",
+    "cdk:test": "npm --prefix infra test",
+    "docker:build": "docker build -t business-auto ."
   },
   "dependencies": {
     "@temporalio/activity": "^1.25.0",
@@ -40,6 +44,9 @@
     "testTimeout": 60000,
     "setupFiles": [
       "<rootDir>/test/helpers/quiet-logs.js"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/infra/"
     ]
   }
 }

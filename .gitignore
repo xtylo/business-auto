@@ -6,3 +6,6 @@ coverage/
 cdk.out/
 *.log
 .DS_Store
+
+# Files saved by the Claude app; not part of the project
+Claude outputs/
