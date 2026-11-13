@@ -163,16 +163,28 @@ describe('security', () => {
 
 describe('data and logs', () => {
   test('a single small Redis node', () => {
-    template.hasResourceProperties('AWS::ElastiCache::CacheCluster', {
+    template.hasResourceProperties('AWS::ElastiCache::ReplicationGroup', {
       Engine: 'redis',
       CacheNodeType: 'cache.t4g.micro',
-      NumCacheNodes: 1,
+      NumCacheClusters: 1,
+      AutomaticFailoverEnabled: false,
     });
   });
 
-  test('logs are kept for one week and deleted with the stack', () => {
+  test('the API gets a Redis URL built from the primary endpoint address and port', () => {
+    // Regression test: an earlier version read endpoint attributes that came back
+    // empty at deploy time, and the API received "redis://:".
+    const redisUrl = environmentOf(containerNamed('web')).REDIS_URL;
+    const attributes = redisUrl['Fn::Join'][1]
+      .filter((part) => typeof part === 'object')
+      .map((part) => part['Fn::GetAtt'][1]);
+
+    expect(attributes).toEqual(['PrimaryEndPoint.Address', 'PrimaryEndPoint.Port']);
+  });
+
+  test('log entries expire after one week, and the log group survives a rollback', () => {
     template.hasResourceProperties('AWS::Logs::LogGroup', { RetentionInDays: 7 });
-    template.hasResource('AWS::Logs::LogGroup', { DeletionPolicy: 'Delete' });
+    template.hasResource('AWS::Logs::LogGroup', { DeletionPolicy: 'Retain' });
   });
 });
 

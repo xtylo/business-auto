@@ -49,8 +49,10 @@ class BusinessAutoStack extends cdk.Stack {
 
     const logGroup = new logs.LogGroup(this, 'Logs', {
       retention: logs.RetentionDays.ONE_WEEK,
-      // Delete the logs with the stack. In production you would keep them.
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      // Keep the logs when the stack is deleted or rolled back. A failed
+      // deployment is exactly when the logs are needed, and a rollback would
+      // otherwise delete them together with everything else.
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
     const logTo = (streamPrefix) => ecs.LogDrivers.awsLogs({ logGroup, streamPrefix });
 
@@ -89,8 +91,8 @@ class BusinessAutoStack extends cdk.Stack {
     const temporalAddress = `temporal.${NAMESPACE_NAME}:${TEMPORAL_PORT}`;
 
     // ---- Redis (L1) ----------------------------------------------------------
-    // ElastiCache has no L2 construct for a single-node cluster, so this uses the
-    // raw CloudFormation resources. Note how much more has to be spelled out.
+    // ElastiCache has no L2 construct for this, so it uses the raw CloudFormation
+    // resources. Note how much more has to be spelled out.
     const redisSecurityGroup = new ec2.SecurityGroup(this, 'RedisSecurityGroup', {
       vpc,
       description: 'Redis: reachable only from the API',
@@ -100,14 +102,20 @@ class BusinessAutoStack extends cdk.Stack {
       description: 'Private subnets for Redis',
       subnetIds: vpc.privateSubnets.map((subnet) => subnet.subnetId),
     });
-    const redis = new elasticache.CfnCacheCluster(this, 'Redis', {
+    // A replication group with a single node. The simpler CfnCacheCluster resource
+    // was tried first and deployed fine, but its endpoint attributes came back
+    // empty, which produced the unusable URL "redis://:". The replication group's
+    // primary endpoint is the attribute AWS documents for connecting to Redis.
+    const redis = new elasticache.CfnReplicationGroup(this, 'Redis', {
+      replicationGroupDescription: 'Idempotency keys and status cache for the API',
       engine: 'redis',
       cacheNodeType: 'cache.t4g.micro',
-      numCacheNodes: 1,
+      numCacheClusters: 1,
+      automaticFailoverEnabled: false,
       cacheSubnetGroupName: redisSubnets.ref,
-      vpcSecurityGroupIds: [redisSecurityGroup.securityGroupId],
+      securityGroupIds: [redisSecurityGroup.securityGroupId],
     });
-    const redisUrl = `redis://${redis.attrRedisEndpointAddress}:${redis.attrRedisEndpointPort}`;
+    const redisUrl = `redis://${redis.attrPrimaryEndPointAddress}:${redis.attrPrimaryEndPointPort}`;
 
     // ---- Application image ---------------------------------------------------
     // Built from the repository's Dockerfile during `cdk deploy` and pushed to a
@@ -193,6 +201,14 @@ class BusinessAutoStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: `http://${api.loadBalancer.loadBalancerDnsName}`,
       description: 'Public URL of the API',
+    });
+    new cdk.CfnOutput(this, 'LogGroupName', {
+      value: logGroup.logGroupName,
+      description: 'CloudWatch log group shared by the API, the worker and Temporal',
+    });
+    new cdk.CfnOutput(this, 'ClusterName', {
+      value: cluster.clusterName,
+      description: 'ECS cluster that runs the three services',
     });
   }
 }
