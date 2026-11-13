@@ -19,9 +19,19 @@ const CLOSED_STATUS_TTL_SECONDS = 60 * 60; // a closed workflow never changes ag
  * @param {object} deps
  * @param {import('@temporalio/client').Client} deps.temporalClient
  * @param {ReturnType<import('./store').createStore>} deps.store
+ * @param {ReturnType<import('./metrics').createMetrics>} [deps.metrics]
+ * @param {boolean} [deps.statusCacheEnabled] - false makes every status read go to Temporal.
  */
-function createRoutes({ temporalClient, store }) {
+function createRoutes({ temporalClient, store, metrics, statusCacheEnabled = true }) {
   const router = express.Router();
+
+  // Remember where this router is mounted ("/api"). Express clears req.baseUrl
+  // once a request leaves the router, for example when an error is handled, and
+  // the metrics middleware needs it to label the request with its full route.
+  router.use((req, res, next) => {
+    res.locals.baseUrl = req.baseUrl;
+    next();
+  });
 
   // ---- Start a process -------------------------------------------------------
   router.post('/start-process', async (req, res) => {
@@ -72,10 +82,14 @@ function createRoutes({ temporalClient, store }) {
   router.get('/process/:id', async (req, res) => {
     const workflowId = req.params.id;
 
-    const cached = await store.getCachedStatus(workflowId);
-    if (cached) {
-      return res.set('X-Cache', 'HIT').json(cached);
+    if (statusCacheEnabled) {
+      const cached = await store.getCachedStatus(workflowId);
+      if (cached) {
+        if (metrics) metrics.recordCacheHit();
+        return res.set('X-Cache', 'HIT').json(cached);
+      }
     }
+    if (metrics) metrics.recordCacheMiss();
 
     const handle = temporalClient.workflow.getHandle(workflowId);
 
@@ -92,12 +106,14 @@ function createRoutes({ temporalClient, store }) {
       ...state,
     };
 
-    const isRunning = description.status.name === 'RUNNING';
-    await store.cacheStatus(
-      workflowId,
-      body,
-      isRunning ? RUNNING_STATUS_TTL_SECONDS : CLOSED_STATUS_TTL_SECONDS
-    );
+    if (statusCacheEnabled) {
+      const isRunning = description.status.name === 'RUNNING';
+      await store.cacheStatus(
+        workflowId,
+        body,
+        isRunning ? RUNNING_STATUS_TTL_SECONDS : CLOSED_STATUS_TTL_SECONDS
+      );
+    }
 
     res.set('X-Cache', 'MISS').json(body);
   });

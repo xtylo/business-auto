@@ -12,8 +12,8 @@ Convention: all code, comments, Markdown and commit messages are written in Engl
 - [x] Session 3 — Human wait: signals, queries, timers and compensation *(done; notes in [docs/session-03.md](docs/session-03.md))*
 - [x] Session 4 — Express API + Redis *(done; notes in [docs/session-04.md](docs/session-04.md))*
 - [x] Session 5 — Testing *(done; notes in [docs/session-05.md](docs/session-05.md))*
-- [ ] Session 6 — AWS CDK: infrastructure as code *(files in place; run the steps in [docs/session-06.md](docs/session-06.md))*
-- [ ] Session 7 — Observability and load testing
+- [x] Session 6 — AWS CDK: infrastructure as code *(done; notes in [docs/session-06.md](docs/session-06.md))*
+- [ ] Session 7 — Observability and load testing *(files in place; run the steps in [docs/session-07.md](docs/session-07.md))*
 - [ ] Session 8 — Deployment and wrap-up
 
 ## How each session works
@@ -40,7 +40,7 @@ It was chosen because it exercises what makes Temporal valuable: retries, long w
 | `cdk-stack.js` with `@aws-cdk/core` | That is CDK v1, unsupported since 2023; `vpc` is undefined | CDK v2 (`aws-cdk-lib`) in `infra/` *(done, session 6)* |
 | `index.js` does not export `app` | The README integration test cannot import it | `app.js` exports, `server.js` listens *(done)* |
 | `.devcontainer` references a missing `Dockerfile` | It does not start | Compose-based dev container with its own Dockerfile *(done, session 2)*. The production image is a separate Dockerfile (session 6) |
-| k6: 1000 VUs with `sleep(1)` | Tops out near 1000 req/s, not the 2000 target; thresholds differ from the README | Arrival-rate scenario and aligned thresholds (session 7) |
+| k6: 1000 VUs with `sleep(1)` | Tops out near 1000 req/s, not the 2000 target; thresholds differ from the README | Arrival-rate scenarios and aligned thresholds *(done, session 7)* |
 
 ## Target repository layout
 
@@ -59,7 +59,8 @@ business-auto/
 ├── test/                 # activities, API and workflow tests
 ├── .github/workflows/    # CI
 ├── infra/                # CDK v2 app: bin/, lib/, test/
-├── docs/                 # session notes
+├── observability/        # Prometheus and Grafana configuration
+├── docs/                 # session notes and load test results
 ├── loadtest/k6.js
 ├── docker-compose.yml
 ├── Dockerfile            # production image (API and worker)
@@ -164,8 +165,8 @@ business-auto/
 1. Prometheus + Grafana in the compose file; Temporal SDK and API metrics.
 2. Rewrite `loadtest/k6.js` with an arrival-rate scenario and a ramp.
 3. Short run (2–3 min); read p50/p95/p99 and error rate.
-4. One tuning change (worker concurrency, cache or connections) and measure again.
-5. Record the real numbers obtained on your machine.
+4. Tuning experiment: the status cache on versus off (optional: worker concurrency).
+5. Record the real numbers in `docs/load-test-results.md`.
 
 **Done when:** you have a table of measured results before and after the change, and know where it starts to degrade.
 

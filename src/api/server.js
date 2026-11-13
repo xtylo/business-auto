@@ -3,6 +3,7 @@
 const { createApp } = require('./app');
 const { createTemporalClient } = require('../client');
 const { createRedis } = require('../redis');
+const { createMetrics } = require('./metrics');
 const config = require('../config');
 
 async function main() {
@@ -11,16 +12,28 @@ async function main() {
   const { client: temporalClient, connection } = await createTemporalClient();
   const redis = createRedis();
 
-  const app = createApp({ temporalClient, redis });
+  const metrics = createMetrics();
+
+  const app = createApp({
+    temporalClient,
+    redis,
+    metrics,
+    statusCacheEnabled: config.statusCacheEnabled,
+  });
 
   const server = app.listen(config.port, () => {
     console.log(`API listening on http://localhost:${config.port}`);
+    console.log(`Status cache: ${config.statusCacheEnabled ? 'on' : 'OFF'}`);
   });
+
+  const metricsServer = metrics.startServer(config.apiMetricsPort);
+  console.log(`API metrics on http://localhost:${config.apiMetricsPort}/metrics`);
 
   // Graceful shutdown: stop accepting requests, let the ones in flight finish,
   // then close the connections. Container platforms send SIGTERM before stopping.
   const shutdown = (signal) => {
     console.log(`${signal} received, shutting down...`);
+    metricsServer.close();
     server.close(async () => {
       redis.disconnect();
       await connection.close();

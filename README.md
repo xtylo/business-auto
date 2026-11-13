@@ -3,7 +3,7 @@
 A platform that automates business processes using durable workflows.
 Built with JavaScript (Node.js), Temporal, Redis and AWS CDK.
 
-> **Status:** work in progress. Session 6 of 8 in progress. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status:** work in progress. Session 7 of 8 in progress. See [PLAN.md](PLAN.md) for the roadmap.
 > The "Project brief" section below is the original set of requirements. Its target figures
 > are goals, not measured results; the final README will report what was actually measured.
 
@@ -34,6 +34,9 @@ npm run start:invoice    # terminal 2
 
 Temporal Web UI in both cases: http://localhost:8233
 
+Metrics: Prometheus at http://localhost:9090 and Grafana at http://localhost:3001 (dashboard "Business Auto").
+Load tests: see [docs/session-07.md](docs/session-07.md).
+
 | Script | What it does |
 | --- | --- |
 | `npm run worker` | Starts a Temporal worker |
@@ -63,7 +66,8 @@ docs/            Session notes
 .devcontainer/   Development container definition
 infra/           AWS infrastructure (CDK v2): network, ECS services, load balancer, Redis
 Dockerfile       Production image, shared by the API and the worker
-loadtest/        k6 load test
+observability/   Prometheus and Grafana configuration
+loadtest/        k6 load test (scenarios: smoke, ramp, reads)
 ```
 
 ---

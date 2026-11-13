@@ -1,12 +1,16 @@
 # Local infrastructure for development.
-#   Temporal gRPC  -> localhost:7233  (workers and clients connect here)
+#   Temporal gRPC   -> localhost:7233  (workers and clients connect here)
 #   Temporal Web UI -> http://localhost:8233
-#   Redis          -> localhost:6379  (used from session 4 onwards)
+#   Redis           -> localhost:6379
+#   Prometheus      -> http://localhost:9090
+#   Grafana         -> http://localhost:3001  (dashboard "Business Auto")
 #
 # Two ways to use it:
 #   - Dev container (recommended): VS Code starts these services together with the
 #     development container. See .devcontainer/.
 #   - Directly on the host: `npm run infra:up`.
+#
+# Load test (from the host):  docker compose --profile loadtest run --rm k6 run /scripts/k6.js
 
 # Fixed project name so both ways above share the same containers.
 name: business-auto
@@ -25,3 +29,37 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+
+  # Collects metrics by scraping the API and the worker every few seconds.
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  # Draws the metrics. Local use only: anonymous access with admin rights.
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      # 3000 is taken by the API.
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+  # Load generator. Has a profile, so it only runs when asked for explicitly.
+  k6:
+    image: grafana/k6:latest
+    profiles: ["loadtest"]
+    volumes:
+      - ./loadtest:/scripts:ro
+    environment:
+      # "app" is the dev container, where the API runs.
+      BASE_URL: http://app:3000
