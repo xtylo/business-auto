@@ -3,7 +3,7 @@
 A platform that automates business processes using durable workflows.
 Built with JavaScript (Node.js), Temporal, Redis and AWS CDK.
 
-> **Status:** work in progress. Session 7 of 8 in progress. See [PLAN.md](PLAN.md) for the roadmap.
+> **Status:** work in progress. Session 8 of 8 in progress. See [PLAN.md](PLAN.md) for the roadmap.
 > The "Project brief" section below is the original set of requirements. Its target figures
 > are goals, not measured results; the final README will report what was actually measured.
 
@@ -46,6 +46,7 @@ Load tests: see [docs/session-07.md](docs/session-07.md).
 | `npm test` | Runs all tests. `npm run test:unit` skips the workflow tests, which need to download a test server once |
 | `npm run cdk:synth` / `cdk:test` / `cdk:diff` | AWS infrastructure in `infra/`: generate the CloudFormation template, run the template tests, compare with what is deployed |
 | `npm run docker:build` | Host only: builds the production image |
+| `npm run smoke -- <url>` | Drives one invoice through the whole process over HTTP. Defaults to `http://localhost:3000` |
 | `npm run api` | Starts the HTTP API on port 3000. Endpoints and examples: [docs/session-04.md](docs/session-04.md) |
 | `npm run infra:up` / `infra:down` / `infra:logs` | Host only: manage Temporal and Redis with Docker Compose. History is in memory and is erased on stop |
 

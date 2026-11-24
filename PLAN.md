@@ -13,8 +13,10 @@ Convention: all code, comments, Markdown and commit messages are written in Engl
 - [x] Session 4 — Express API + Redis *(done; notes in [docs/session-04.md](docs/session-04.md))*
 - [x] Session 5 — Testing *(done; notes in [docs/session-05.md](docs/session-05.md))*
 - [x] Session 6 — AWS CDK: infrastructure as code *(done; notes in [docs/session-06.md](docs/session-06.md))*
-- [ ] Session 7 — Observability and load testing *(files in place; run the steps in [docs/session-07.md](docs/session-07.md))*
-- [ ] Session 8 — Deployment and wrap-up
+- [x] Session 7 — Observability and load testing *(done; notes in [docs/session-07.md](docs/session-07.md), results in [docs/load-test-results.md](docs/load-test-results.md))*
+- [x] Session 8 — Deployment and wrap-up *(done: deployed to `us-west-2`, verified, measured and destroyed; notes in [docs/session-08.md](docs/session-08.md))*
+
+**All eight sessions are complete.** The final state of the project is described in [README.md](README.md).
 
 ## How each session works
 
@@ -149,7 +151,7 @@ business-auto/
 **Steps**
 1. `Dockerfile` for API and worker (same image, different command).
 2. CDK v2 app in `infra/` (JavaScript, its own `package.json`).
-3. Stack: VPC, ECS Fargate cluster, API service behind an ALB, worker service, Temporal dev server, ElastiCache Redis.
+3. Stack: VPC, ECS Fargate cluster, API service behind an ALB, worker service, Temporal dev server, ElastiCache Redis (a single-node replication group).
 4. `cdk synth` and read the generated template.
 5. Template tests with `aws-cdk-lib/assertions`.
 
@@ -175,7 +177,7 @@ business-auto/
 **Steps**
 1. `cdk bootstrap` and `cdk deploy` to a real AWS account.
 2. Production checklist: ALB healthy, workers connected, Redis reachable.
-3. Smoke test against the public URL.
+3. Smoke test against the public URL (`npm run smoke -- <url>`).
 4. `cdk destroy` when finished (ALB, NAT and ElastiCache are billed hourly).
 5. Final README: architecture, how to run it, measured results and lessons learned.
 

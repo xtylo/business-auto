@@ -103,51 +103,51 @@ together. Per-step values come from the Grafana latency panel:
 ## 3. Tuning: status cache on versus off
 
 `SCENARIO=reads`: 200 status reads per second for 60 s, spread over 20 processes that stay
-waiting for approval. Same rate for both runs.
+waiting for approval. Same rate for both runs; the only difference is `STATUS_CACHE=off`.
 
-| | Cache on | Cache off (`STATUS_CACHE=off`) |
-| --- | --- | --- |
-| Rate requested (req/s) | 200 | 200 |
-| Rate achieved (req/s) | 199 | 35 |
-| Reads completed | 12,001 | 3,178 |
-| Successful reads (HTTP 200) | 100% | 0% |
-| Latency median | 0.84 ms | 39.5 s |
-| Latency p95 | 9.86 ms | 42.1 s |
-| Latency p99 | 13.28 ms | 43.4 s |
-| Latency max | 1.91 s | 60 s (request timeout) |
-| Cache hit ratio | 94.79% | 0% |
-| Dropped iterations | 0 | 8,036 |
-| Virtual users | 2 at most | Reached the 2,000 ceiling after 19 s |
+| | Cache on | Cache off | Change |
+| --- | --- | --- | --- |
+| Rate requested (req/s) | 200 | 200 | |
+| Rate achieved (req/s) | 199 | 199 | same |
+| Reads completed | 12,001 | 12,001 | same |
+| Successful reads (HTTP 200) | 100% | 100% | same |
+| Latency median | 0.84 ms | 11.45 ms | 13.6x slower |
+| Latency p95 | 9.86 ms | 32.45 ms | 3.3x slower |
+| Latency p99 | 13.28 ms | 61.54 ms | 4.6x slower |
+| Latency max | 1.91 s | 1.77 s | |
+| Cache hit ratio | 94.79% | 0% | |
+| Reads that reached Temporal | about 625 (5%) | 12,001 (100%) | 19x more |
+| Virtual users needed at peak | 2 | 10 | 5x more |
+| Dropped iterations | 0 | 0 | same |
 
-### Cache on: valid result
+### What changed and why
 
-With a 2-second cache on a running workflow, 95% of the reads never reached Temporal. Redis
-answered them in under a millisecond at the median, and 200 requests/s needed at most two
-virtual users. The remaining 5% (about 10 reads per second) went to Temporal and were also
-fast: the whole run stayed at p99 = 13 ms.
+- **Both configurations handled 200 reads per second** with no errors and inside the
+  `p99 < 200 ms` target. On this machine, at this rate, the cache is not what makes the
+  system work.
+- **The cache makes the typical read about 14 times faster** (median 0.84 ms versus 11.45 ms).
+  A cached read is one Redis `GET`. An uncached read is two calls to Temporal, one of which
+  is a query that a worker answers by running the workflow code.
+- **The larger effect is on what sits behind the API.** A 2-second cache on 20 processes cut
+  the reads that reach Temporal and the worker from 12,001 to about 625. That capacity stays
+  available for running workflows.
+- **p50 improved much more than p99.** With the cache on, the slowest reads are the 5% that
+  miss, so the tail is still set by Temporal. A cache moves the median far more than the tail.
 
-### Cache off: not yet a valid measurement
+### An invalid run, and what it showed
 
-**Every** read failed, including the very first ones, and each took about 40 seconds to fail.
-A system that is merely overloaded normally serves the first requests and then degrades. A
-100% failure rate from the start fits a different explanation at least as well: no worker was
-answering queries during this run (a status read with the cache off always needs a worker).
+The first cache-off attempt failed on every one of its 3,178 reads, each after about 40
+seconds, with 8,036 iterations dropped. The cause was not load: **the worker was not
+running**. A status read with the cache off is a Temporal query, and a query needs a worker.
+That run was discarded and repeated; the table above is the repeat.
 
-Until that is ruled out, this column shows what happened but does not measure the cost of
-running without the cache. To settle it:
+It still showed two things worth keeping:
 
-1. Confirm the worker is running, then read one process by hand with the cache off. A fast
-   `200` means the worker is fine and the collapse was real overload.
-2. Repeat the scenario at lower rates (`-e RATE=20`, `50`, `100`) to find where the
-   no-cache configuration actually breaks.
-
-| Rate (req/s), cache off | Successful | p50 | p95 | p99 | Dropped iterations |
-| --- | --- | --- | --- | --- | --- |
-| 20 | | | | | |
-| 50 | | | | | |
-| 100 | | | | | |
-
-**What changed and why:** *to complete after the re-run.*
+- With the cache **on**, 95% of status reads would have kept working through that same worker
+  outage, because they are answered from Redis. The cache also softens a worker outage for reads.
+- A missing dependency under an open load model does not fail fast. Requests piled up to the
+  2,000 virtual-user ceiling and each waited tens of seconds. A short query timeout in the
+  API would turn that into a quick `503`.
 
 ## 4. Optional tuning: worker concurrency
 
@@ -159,8 +159,64 @@ running without the cache. To settle it:
 | Activity queue wait p95 | | |
 | Free activity slots at peak | | |
 
+## 5. On AWS
+
+Run on 2026-11-13 against the deployed stack in `us-west-2` (Oregon), through the public load
+balancer. k6 ran on the development machine in Sonora, Mexico, so **every figure includes the
+internet round trip** between the two. API: 2 Fargate tasks (0.25 vCPU, 512 MB each). Worker:
+1 task. Temporal: 1 dev-server task. Redis: one `cache.t4g.micro` node.
+
+| | Smoke (5 processes/s, 30 s) | Reads (200 req/s, 60 s, cache on) |
+| --- | --- | --- |
+| HTTP requests | 300 (9.9/s) | 12,020 (193.6/s) |
+| Latency median | 89.49 ms | 81.18 ms |
+| Latency p95 | 164.41 ms | 119.27 ms |
+| Latency p99 | 196.28 ms | 272.42 ms |
+| Latency max | 256.72 ms | 696.96 ms |
+| Failed requests | 0 of 300 | 1 of 12,020 (0.008%) |
+| Cache hit ratio | n/a | 93.95% |
+| Dropped iterations | 0 | 0 |
+| Virtual users at peak | 2 | 49 |
+
+Against the brief's thresholds: error rate under 0.1% held in both runs. p99 under 200 ms
+held in the smoke run by a narrow margin (196 ms) and was missed in the reads run (272 ms).
+
+### Reading
+
+- **Most of the latency is distance, not processing.** The same cached read has a median of
+  0.84 ms locally and 81 ms from Sonora to Oregon. The difference is the network path, which
+  these runs cannot separate from server time. Measuring from inside the region, or reading
+  the load balancer's own target response time, would isolate it.
+- **Redis worked across both API tasks.** A 94% hit ratio with two tasks behind the load
+  balancer is only possible with a shared cache: each task served entries the other one wrote.
+- **One request in 12,020 failed.** Its cause was not investigated before the stack was
+  destroyed. It is inside the error-rate target, and is recorded here rather than explained.
+- **Not run on AWS:** the ramp scenario and the cache-off comparison. The saturation point of
+  this deployment is unknown.
+
 ## Conclusions
 
-- Against the targets:
-- Bottleneck on this machine:
-- What I would change first on AWS:
+- **Against the targets.** At low load the API is far inside the latency target (p99 of 14 ms
+  against 200 ms) with no errors. The throughput target of 2,000 requests/s was not approached:
+  the ramp sustained about 176 requests/s on average and latency broke down in its last steps.
+  The error-rate target held in every valid run: no request was rejected or lost.
+- **Bottleneck on this machine.** Not the worker's execution slots, which stayed mostly free
+  during the ramp. The limit is either the single-process Temporal dev server or the CPU that
+  the load generator, API, worker, Temporal and Redis all share. These runs cannot separate
+  the two.
+- **Behaviour under overload.** The system slowed down instead of failing: work accepted by
+  the API queued inside Temporal and was completed minutes later at about 25 workflows/s.
+- **Value of the cache.** About 14x on median read latency and a 19x reduction in read
+  traffic reaching Temporal, at 200 reads/s.
+- **What I would change first on AWS.** Replace the single in-memory Temporal task with
+  Temporal Cloud or a database-backed cluster; add a timeout to status queries so a missing
+  worker fails fast; measure from inside the region to separate network time from server
+  time; then find the deployment's saturation point with the ramp scenario and scale the API
+  and the worker independently from what it shows.
+
+## Not measured
+
+- Per-step latency during the ramp (only whole-run figures were recorded).
+- Worker concurrency (section 4).
+- The saturation point on AWS, and server-side latency without the internet path.
+- The business figures in the brief (500K processes per month, 1M USD per year saved).

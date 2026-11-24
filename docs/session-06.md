@@ -60,7 +60,7 @@ All three appear in `infra/lib/business-auto-stack.js`:
 
 | Level | Example in the stack | What you write | What you get |
 | --- | --- | --- | --- |
-| **L1** `Cfn*` | `elasticache.CfnCacheCluster` | Every property, exactly as CloudFormation names it | One resource |
+| **L1** `Cfn*` | `elasticache.CfnReplicationGroup` | Every property, exactly as CloudFormation names it | One resource |
 | **L2** | `ec2.Vpc`, `ecs.Cluster`, `ecs.FargateService` | Intent, with defaults | A resource plus what it needs (roles, routes) |
 | **L3** pattern | `ecsPatterns.ApplicationLoadBalancedFargateService` | A use case | Load balancer, listener, target group, service, security groups, roles |
 
@@ -135,7 +135,7 @@ find the two ingress rules, each with a `SourceSecurityGroupId` instead of an IP
 npm run cdk:test
 ```
 
-Expected: 19 passed. Open `infra/test/business-auto-stack.test.js`: the tests state the
+Expected: 20 passed. Open `infra/test/business-auto-stack.test.js`: the tests state the
 decisions that matter in plain sentences, for example "the load balancer is the only thing
 open to the internet" and "Redis accepts connections on 6379 from exactly one source".
 
@@ -200,7 +200,7 @@ prices in the AWS Pricing Calculator for your region before deploying.
 ## Done when
 
 - [ ] `npm run cdk:synth` produces the template without errors.
-- [ ] `npm run cdk:test` passes: 19 tests.
+- [ ] `npm run cdk:test` passes: 20 tests.
 - [ ] You broke a security rule and a test caught it.
 - [ ] The production image builds and runs on your machine.
 - [ ] Commit created: `Session 6: AWS infrastructure with CDK`

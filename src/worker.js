@@ -6,6 +6,7 @@
 const { NativeConnection, Runtime, Worker } = require('@temporalio/worker');
 const activities = require('./activities');
 const config = require('./config');
+const { retry } = require('./retry');
 
 async function run() {
   // The Runtime is the SDK's process-wide core. Configuring it before anything
@@ -23,8 +24,15 @@ async function run() {
     },
   });
 
-  const connection = await NativeConnection.connect({
-    address: config.temporalAddress,
+  // The first line of output, so the logs are never empty even if startup fails later.
+  console.log(`Worker starting. Temporal: ${config.temporalAddress}`);
+
+  // A worker cannot do anything without Temporal, so it waits for it: up to
+  // about five minutes, logging every failed attempt.
+  const connection = await retry(() => NativeConnection.connect({ address: config.temporalAddress }), {
+    label: `Connecting to Temporal at ${config.temporalAddress}`,
+    attempts: 60,
+    delayMs: 5000,
   });
 
   try {
